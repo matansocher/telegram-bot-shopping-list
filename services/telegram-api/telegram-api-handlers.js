@@ -6,15 +6,17 @@ const requestsService = require('../requests.service');
 
 
 async function handler(bot, handlerFunction, { message, actionText = '', callbackQueryData = '' }) {
-    console.log(`${handlerFunction.name} - start`);
     const defaultValuesFromMessage = telegramApiService.getDefaultValuesFromMessage(message, actionText, callbackQueryData);
+
+    const logBody = `chatId: ${defaultValuesFromMessage.chatId}, username: ${defaultValuesFromMessage.username}, action: ${handlerFunction.name}`;
+    console.log(`${logBody} - start`);
 
     try {
         // await bot.sendChatAction(defaultValuesFromMessage.chatId, 'typing');
         await handlerFunction(bot, defaultValuesFromMessage)
-        console.log(`${handlerFunction.name} - success`);
+        console.log(`${logBody} - success`);
     } catch (err) {
-        console.error(`${handlerFunction.name} - error - ${JSON.stringify(err)}`);
+        console.error(`${logBody} - error - ${JSON.stringify(err)}`);
         // await bot.sendMessage(defaultValuesFromMessage.chatId, `Sorry, but something went wrong`)
     }
 }
