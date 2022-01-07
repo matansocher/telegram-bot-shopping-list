@@ -14,6 +14,7 @@ bot.on('message', async msg => {
     const data = { message: msg, actionText: [null, msg.text] };
     let relevantHandler;
     switch (msg.text) {
+        case 'menu': relevantHandler = remindersBotHandlers.menuHandler; break;
         case 'list': relevantHandler = remindersBotHandlers.listHandler; break;
         case 'clear': relevantHandler = remindersBotHandlers.clearHandler; break;
         default: relevantHandler = remindersBotHandlers.addHandler; break;

@@ -107,29 +107,8 @@ function getAddReminderSuccessMessageText(reminderText, remindAtAmount, remindAt
 function getReminderTextInList(reminder) {
     const { text, remindAt } = reminder;
     const dateObj = new Date(remindAt);
-    const dateFormat = getFormattedDateFromDateObj(dateObj);
+    const dateFormat = moment(dateObj.getTime()).fromNow();
     return { text, dateFormat };
-}
-
-function getFormattedDateFromDateObj(dateObj) {
-    return moment(dateObj.getTime()).fromNow();
-    const differenceInDays = getDifferenceInDays(dateObj, new Date());
-    if (differenceInDays < 1) {
-        return `${numberAsTwoDigits(dateObj.getHours())}:${numberAsTwoDigits(dateObj.getMinutes())}`;
-    }
-    if (differenceInDays <= 2 && differenceInDays > 1) {
-        return `tomorrow at ${numberAsTwoDigits(dateObj.getHours())}:${numberAsTwoDigits(dateObj.getMinutes())}`;
-    }
-    return `${numberAsTwoDigits(dateObj.getDate())}-${numberAsTwoDigits(dateObj.getMonth()+1)}-${numberAsTwoDigits(dateObj.getFullYear())}`
-}
-
-function getDifferenceInDays(dateObj1, dateObj2) {
-    const differenceInTime = dateObj2.getTime() - dateObj1.getTime();
-    return differenceInTime / (1000 * 3600 * 24);
-}
-
-function numberAsTwoDigits(number) {
-    return number < 10 ? `0${number}` : number;
 }
 
 module.exports = {

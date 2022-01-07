@@ -1,6 +1,6 @@
 const { flattenDeep } = require('lodash');
 const { database } = require('./firebase.config');
-const telegramService = require("../telegram/telegram.service");
+const telegramService = require('../telegram/telegram.service');
 
 async function getAllChatIds() {
     const resp = await database.collection('users').get();

@@ -1,6 +1,17 @@
 const firebaseService = require('../firebase/firebase.service');
 const telegramService = require('../telegram/telegram.service');
 
+async function menuHandler(bot, { chatId }) {
+
+    const menuItems = [
+        'list - get all future reminders',
+        'clear - clear all future reminders',
+        'add - new reminder: `${num}${units - m|h|d} - ${reminder text}`'
+    ];
+    const responseText = `Here are the options I can help with\n\n${menuItems.join('\n')}`;
+    await bot.sendMessage(chatId, responseText);
+}
+
 async function addHandler(bot, { chatId, actionText, date }) {
     const { remindAtSymbol, reminderText } = telegramService.parseNewReminderText(actionText);
     const { remindAtAmount, remindAtUnits } = telegramService.parseTimeToRemindText(remindAtSymbol);
@@ -48,6 +59,7 @@ async function callbackQueryHandler(bot, { text, chatId, action }) {
 }
 
 module.exports = {
+    menuHandler,
     addHandler,
     listHandler,
     clearHandler,

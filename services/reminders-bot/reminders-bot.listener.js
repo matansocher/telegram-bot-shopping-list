@@ -1,5 +1,5 @@
-const firebaseService = require("../firebase/firebase.service");
 const config = require('../../config');
+const firebaseService = require('../firebase/firebase.service');
 const telegramService = require('../telegram/telegram.service');
 const BOT_NAME = config.REMINDERS_BOT_NAME;
 
@@ -23,9 +23,7 @@ async function getActiveRemindersAndHandle(bot) {
             console.log(`finished reminders listener handler - no reminder to remind this time`);
             return;
         }
-        currentReminders.forEach(currentReminder => {
-            handleReminder(bot, currentReminder);
-        });
+        currentReminders.forEach(currentReminder => handleReminder(bot, currentReminder));
     }
 }
 
@@ -40,9 +38,9 @@ async function handleReminder(bot, currentReminder) {
     }
     console.log(`${logBody} - sending a reminder`);
     const buttonsOptions = telegramService.buildOptionsButtons([
-        { text: 'Snooze 1 minute', data: `1m_${id}` },
-        { text: 'Snooze 1 hour', data: `1h_${id}` },
-        { text: 'Snooze 1 day', data: `1d_${id}` },
+        { text: '🔔 1 minute', data: `1m_${id}` },
+        { text: '🔔 1 hour', data: `1h_${id}` },
+        { text: '🔔 1 day', data: `1d_${id}` },
         { text: 'Complete', data: `complete_${id}` }
     ], 3);
     const options = { reply_markup: { inline_keyboard: buttonsOptions } };
