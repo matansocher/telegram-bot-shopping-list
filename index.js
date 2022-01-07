@@ -1,18 +1,17 @@
 
+require('dotenv').config()
 const express = require('express');
 const CORS = require('./services/cors.service');
 const app = express();
 
-const routes = require('./routes');
-require('./services/telegram-api/telegram-api.js');
+require('./services/shopping-list-bot/shopping-list-bot.js');
+require('./services/reminders-bot/reminders-bot.js');
 
 app.use(CORS);
 
 app.get('/', (req, res, next) => {
   res.send('OK');
 });
-
-app.use('/', routes);
 
 const port = process.env.PORT || 5000;
 app.listen(port, () => {

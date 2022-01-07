@@ -1,24 +1,25 @@
-// const firebase = 'firebase';
+const { flattenDeep } = require('lodash');
 const { database } = require('./firebase.config');
+const telegramService = require("../telegram/telegram.service");
+
+async function getAllChatIds() {
+    const resp = await database.collection('users').get();
+    return resp.docs.map(item => item.id);
+}
 
 function getShoppingList(chatId) {
-    chatId = chatId.toString();
     return database.collection('users').doc(chatId).collection('shoppingList').get();
-    // return database.collection('users').doc(chatId.toString());
 }
 
 function addShoppingListItem(chatId, item) {
-    chatId = chatId.toString();
     return database.collection('users').doc(chatId).collection('shoppingList').doc().set(item);
 }
 
 function getShoppingListItemByText(chatId, item) {
-    chatId = chatId.toString();
     return database.collection('users').doc(chatId).collection('shoppingList').where('text', '==', item.text).get();
 }
 
 async function removeShoppingListItem(chatId, text) {
-    chatId = chatId.toString();
 
     const resp = await getShoppingListItemByText(chatId, { text });
     const docsIds = resp.docs.map(item => item.id);
@@ -32,8 +33,49 @@ async function removeShoppingListItem(chatId, text) {
 }
 
 function clearShoppingList(chatId) {
-    chatId = chatId.toString();
     return deleteCollection(`users/${chatId}/shoppingList`, 50);
+}
+
+async function getActiveReminders(chatId) {
+    const resp = await database.collection('users').doc(chatId).collection('reminders')
+        .where('hasNotified', '!=', true).get();
+    return resp.docs
+        .map(item => { return { id: item.id, ...item.data() } })
+        .sort((item1, item2) => item1.remindAt > item2.remindAt ? 1 : -1)
+        .map(item => {
+            const { text, dateFormat } = telegramService.getReminderTextInList(item)
+            return { id: item.id, text, dateFormat, chatId, remindAt: item.remindAt }
+        });
+}
+
+async function getActiveRemindersForChatIds(chatIds) {
+    let promisesArr = [];
+    chatIds.forEach(chatId => {
+        promisesArr.push(getActiveReminders(chatId));
+    });
+    const resp = await Promise.all(promisesArr);
+    return flattenDeep(resp);
+}
+
+function addReminderItem(chatId, item) {
+    return database.collection('users').doc(chatId).collection('reminders').doc().set(item);
+}
+
+function markReminderItemAsNotified(chatId, reminderId) {
+    return database.collection('users').doc(chatId).collection('reminders').doc(reminderId).set({ hasNotified: true }, { merge: true });
+}
+
+function snoozeReminderItem(chatId, reminderId, millisecondsToAdd) {
+    const newRemindAt = new Date().getTime() + millisecondsToAdd;
+    return database.collection('users').doc(chatId).collection('reminders').doc(reminderId).set({ remindAt: newRemindAt, hasNotified: false }, { merge: true });
+}
+
+function deleteReminder(chatId, reminderId) {
+    return database.collection('users').doc(chatId).collection('reminders').doc(reminderId).delete();
+}
+
+function clearReminders(chatId) {
+    return deleteCollection(`users/${chatId}/reminders`, 50);
 }
 
 async function deleteCollection(collectionPath, batchSize) {
@@ -62,9 +104,17 @@ async function deleteQueryBatch(query, resolve) {
 }
 
 module.exports = {
+    getAllChatIds,
     getShoppingList,
     addShoppingListItem,
     getShoppingListItemByText,
     removeShoppingListItem,
-    clearShoppingList
+    clearShoppingList,
+    markReminderItemAsNotified,
+    addReminderItem,
+    snoozeReminderItem,
+    deleteReminder,
+    getActiveReminders,
+    getActiveRemindersForChatIds,
+    clearReminders
 }
