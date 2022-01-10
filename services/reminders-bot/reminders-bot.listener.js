@@ -18,8 +18,8 @@ async function getActiveRemindersAndHandle(bot) {
     for (let i = 0; i < totalPages; i++) {
         const currentChatIds = chatIds.splice(0, config.NUM_OF_USERS_TO_HANDLE_BATCH);
         let currentReminders = await firebaseService.getActiveRemindersForChatIds(currentChatIds);
-        currentReminders = currentReminders.filter(currentReminder => !currentReminder.hasNotified);
-        if (!currentReminders || !currentReminders.length) {
+        const currentActiveReminders = currentReminders.filter(currentReminder => !currentReminder.hasNotified);
+        if (!currentActiveReminders || !currentActiveReminders.length) {
             console.log(`finished reminders listener handler - no reminder to remind this time`);
             return;
         }
@@ -41,7 +41,7 @@ async function handleReminder(bot, currentReminder) {
         { text: '🔔 1 minute', data: `1m_${id}` },
         { text: '🔔 1 hour', data: `1h_${id}` },
         { text: '🔔 1 day', data: `1d_${id}` },
-        { text: 'Complete', data: `complete_${id}` }
+        { text: '✅ Complete', data: `complete_${id}` }
     ], 3);
     const options = { reply_markup: { inline_keyboard: buttonsOptions } };
     await firebaseService.markReminderItemAsNotified(chatId.toString(), id);

@@ -24,5 +24,6 @@ bot.on('message', async msg => {
 
 bot.on('callback_query', async callbackQuery => {
     const data = { message: callbackQuery.message, callbackQueryData: callbackQuery.data };
+    data.message.text = data.message.text.replace('You asked me to remind about - ', '');
     await telegramService.messageMainHandler(BOT_NAME, bot, remindersBotHandlers.callbackQueryHandler, data)
 });

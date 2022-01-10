@@ -55,7 +55,7 @@ function parseNewReminderText(messageText) {
         const reminderText = messageText.substring(firstSpace + 1, messageText.length);
         return { remindAtSymbol, reminderText };
     } catch (err) {
-        return { remindAtSymbol: '99999d', reminderText: messageText };
+        throw { message: 'could not parse new reminder text' }
     }
 }
 
@@ -66,9 +66,7 @@ function parseTimeToRemindText(remindAtSymbol) {
             remindAtAmount: parseInt(remindAtSymbol.substring(0, remindAtSymbol.length - 1))
         }
     } catch (err) {
-        throw {
-            message: 'could not parse time to remind text'
-        }
+        throw { message: 'could not parse time to remind text' }
     }
 }
 
@@ -77,7 +75,7 @@ function getRemindAt(date, remindAtAmount, remindAtUnits) {
         let numOfMillisecondsToAdd = remindAtAmount * getTimeToAddByUnits(remindAtUnits) * 1000;
         return date + numOfMillisecondsToAdd;
     } catch (err) {
-        return date;
+        throw { message: 'could not get remind at time' }
     }
 
     function getTimeToAddByUnits(units) {
@@ -111,6 +109,14 @@ function getReminderTextInList(reminder) {
     return { text, dateFormat };
 }
 
+function getMillisecondsToAddByCallbackActions(callbackActions) {
+    switch (callbackActions) {
+        case '1m': return { amount: 1000 * 60, text: 'in a minute' };
+        case '1h': return { amount: 1000 * 60 * 60, text: 'in an hour' };
+        case '1d': return { amount: 1000 * 60 * 60 * 24, text: 'tomorrow' };
+    }
+}
+
 module.exports = {
     messageMainHandler,
     buildOptionsButtons,
@@ -118,5 +124,6 @@ module.exports = {
     parseTimeToRemindText,
     getRemindAt,
     getAddReminderSuccessMessageText,
-    getReminderTextInList
+    getReminderTextInList,
+    getMillisecondsToAddByCallbackActions
 };

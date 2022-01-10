@@ -2,7 +2,6 @@ const firebaseService = require('../firebase/firebase.service');
 const telegramService = require('../telegram/telegram.service');
 
 async function menuHandler(bot, { chatId }) {
-
     const menuItems = [
         'list - get all future reminders',
         'clear - clear all future reminders',
@@ -38,24 +37,20 @@ async function clearHandler(bot, { chatId }) {
 }
 
 async function callbackQueryHandler(bot, { text, chatId, action }) {
-    text = text.replace('You asked me to remind about - ', '');
     const [completeOrSnoozeText, id] = action.split('_');
+    const availableCallbackActions = ['complete', '1m', '1h', '1d'];
+    if (!availableCallbackActions.includes(completeOrSnoozeText)) {
+        throw { message: 'action not recognized' };
+    }
+
     if (completeOrSnoozeText === 'complete') {
         await firebaseService.deleteReminder(chatId.toString(), id);
-        bot.sendMessage(chatId, `Great job completing ${text}!!`);
-    } else if (completeOrSnoozeText === '1m') {
-        const millisecondsToAdd = 1000 * 60;
-        await firebaseService.snoozeReminderItem(chatId.toString().toString(), id, millisecondsToAdd);
-        bot.sendMessage(chatId, `OK, I will remind you about - ${text} - in a minute`);
-    } else if (completeOrSnoozeText === '1h') {
-        const millisecondsToAdd = 1000 * 60 * 60;
-        await firebaseService.snoozeReminderItem(chatId.toString(), id, millisecondsToAdd);
-        bot.sendMessage(chatId, `OK, I will remind you about - ${text} - in an hour`);
-    } else if (completeOrSnoozeText === '1d') {
-        const millisecondsToAdd = 1000 * 60 * 60 * 24;
-        await firebaseService.snoozeReminderItem(chatId.toString(), id, millisecondsToAdd);
-        bot.sendMessage(chatId, `OK, I will remind you about - ${text} - tomorrow`);
+        return bot.sendMessage(chatId, `Great job completing ${text}!!`);
     }
+
+    const { amount: snoozeMillisecondsAmount, text: snoozeMillisecondsText } = telegramService.getMillisecondsToAddByCallbackActions(completeOrSnoozeText);
+    await firebaseService.snoozeReminderItem(chatId.toString(), id, snoozeMillisecondsAmount);
+    return bot.sendMessage(chatId, `OK, I will remind you about - ${text} - ${snoozeMillisecondsText}`);
 }
 
 module.exports = {
