@@ -117,6 +117,34 @@ function getMillisecondsToAddByCallbackActions(callbackActions) {
     }
 }
 
+function getNextTimeToSuggestDailyAlerts() {
+    const remindAtHourOfDay = 10;
+    const nowObj = new Date();
+    const currentHours = nowObj.getHours();
+    const currentMinutes = nowObj.getMinutes();
+    const currentSeconds = nowObj.getSeconds();
+
+    const hoursToAdd = currentHours < remindAtHourOfDay ? (remindAtHourOfDay - currentHours - 1) : (24 - currentHours + remindAtHourOfDay - 1);
+    const minutesToAdd = currentMinutes === 0 ? 60 : (60 - currentMinutes);
+    return nowObj.getTime() + (1000 * 60 * 60 * hoursToAdd) + (1000 * 60 * minutesToAdd) - (1000 * currentSeconds);
+}
+
+function getDailyAlertsTimestamps() {
+    const dailyAlertsTimestamps = [];
+    const nowObj = new Date();
+    const limit = nowObj.getHours() > 10 ? 4 : 5;
+
+    let currentTimestamp = nowObj.getTime();
+    for (;;) {
+        currentTimestamp = currentTimestamp + (1000 * 60 * 60 * 1.5);
+        dailyAlertsTimestamps.push(currentTimestamp);
+        if (dailyAlertsTimestamps.length > limit - 1) {
+            break;
+        }
+    }
+    return dailyAlertsTimestamps;
+}
+
 module.exports = {
     messageMainHandler,
     buildOptionsButtons,
@@ -125,5 +153,7 @@ module.exports = {
     getRemindAt,
     getAddReminderSuccessMessageText,
     getReminderTextInList,
-    getMillisecondsToAddByCallbackActions
+    getMillisecondsToAddByCallbackActions,
+    getNextTimeToSuggestDailyAlerts,
+    getDailyAlertsTimestamps
 };

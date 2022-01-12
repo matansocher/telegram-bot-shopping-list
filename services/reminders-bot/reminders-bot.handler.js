@@ -22,7 +22,8 @@ async function addHandler(bot, { chatId, actionText, date }) {
 }
 
 async function listHandler(bot, { chatId }) {
-    const remindersItems = await firebaseService.getActiveReminders(chatId.toString());
+    let remindersItems = await firebaseService.getActiveReminders(chatId.toString());
+    remindersItems = remindersItems.filter(remindersItem => !remindersItem.isDailyAlert);
 
     const remindersItemsText = remindersItems.map(remindersItem => `${remindersItem.text} - ${remindersItem.dateFormat}`)
     const responseText = remindersItemsText && remindersItemsText.length ?
@@ -36,21 +37,52 @@ async function clearHandler(bot, { chatId }) {
     await bot.sendMessage(chatId, `OK, the reminders list is empty now`);
 }
 
-async function callbackQueryHandler(bot, { text, chatId, action }) {
-    const [completeOrSnoozeText, id] = action.split('_');
-    const availableCallbackActions = ['complete', '1m', '1h', '1d'];
-    if (!availableCallbackActions.includes(completeOrSnoozeText)) {
-        throw { message: 'action not recognized' };
-    }
+async function callbackQueryHandler(bot, { text, chatId, action, date }) {
+    const [leftSide, rightSide] = action.split('_');
 
-    if (completeOrSnoozeText === 'complete') {
-        await firebaseService.deleteReminder(chatId.toString(), id);
-        return bot.sendMessage(chatId, `Great job completing ${text}!!`);
-    }
+    if (leftSide === 'dailyAlertsAnswer') {
+        const answer = rightSide;
+        if (answer === '1') {
+            const dailyAlertsTimestamps = telegramService.getDailyAlertsTimestamps();
+            dailyAlertsTimestamps.forEach(dailyAlertsTimestamp => {
+                const text = `Please take a few seconds to get up, stretch and relax, it is very healthy!`;
+                firebaseService.addReminderItem(chatId.toString(), { text, date, remindAt: dailyAlertsTimestamp, hasNotified: false, isDailyAlert: true });
+            });
+            return bot.sendMessage(chatId, `OK, daily alerts set for today`);
+        } else {
+            return bot.sendMessage(chatId, `OK, no daily alerts today, will ask again tomorrow 😁`);
+        }
+    } else if (leftSide === 'stopDailyAlerts') {
+        await firebaseService.removeAllDailyAlerts(chatId.toString());
+        return bot.sendMessage(chatId, `OK, daily alerts set for today`);
+    } else {
+        const completeOrSnoozeText = leftSide;
+        const reminderId = rightSide;
+        const availableCallbackActions = ['complete', '1m', '1h', '1d'];
+        if (!availableCallbackActions.includes(completeOrSnoozeText)) {
+            throw { message: 'action not recognized' };
+        }
 
-    const { amount: snoozeMillisecondsAmount, text: snoozeMillisecondsText } = telegramService.getMillisecondsToAddByCallbackActions(completeOrSnoozeText);
-    await firebaseService.snoozeReminderItem(chatId.toString(), id, snoozeMillisecondsAmount);
-    return bot.sendMessage(chatId, `OK, I will remind you about - ${text} - ${snoozeMillisecondsText}`);
+        if (completeOrSnoozeText === 'complete') {
+            await firebaseService.deleteReminder(chatId.toString(), reminderId);
+            return bot.sendMessage(chatId, `Great job completing ${text}!!`);
+        }
+
+        const { amount: snoozeMillisecondsAmount, text: snoozeMillisecondsText } = telegramService.getMillisecondsToAddByCallbackActions(completeOrSnoozeText);
+        await firebaseService.snoozeReminderItem(chatId.toString(), reminderId, snoozeMillisecondsAmount);
+        return bot.sendMessage(chatId, `OK, I will remind you about - ${text} - ${snoozeMillisecondsText}`);
+    }
+}
+
+async function startHandler(bot, { chatId }) {
+    await firebaseService.updateAlertsSubscriber(chatId.toString(), true);
+    await bot.sendMessage(chatId, `OK, I will suggest my magic every work day now`);
+}
+
+async function stopHandler(bot, { chatId }) {
+    await firebaseService.updateAlertsSubscriber(chatId.toString(), false);
+    await firebaseService.removeAllDailyAlerts(chatId.toString());
+    await bot.sendMessage(chatId, `OK, I will stop suggesting, but please keep doing it without me 😁`);
 }
 
 module.exports = {
@@ -58,5 +90,8 @@ module.exports = {
     addHandler,
     listHandler,
     clearHandler,
-    callbackQueryHandler
+    callbackQueryHandler,
+
+    startHandler,
+    stopHandler
 }

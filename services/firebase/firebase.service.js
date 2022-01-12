@@ -44,7 +44,7 @@ async function getActiveReminders(chatId) {
         .sort((item1, item2) => item1.remindAt > item2.remindAt ? 1 : -1)
         .map(item => {
             const { text, dateFormat } = telegramService.getReminderTextInList(item)
-            return { id: item.id, text, dateFormat, chatId, remindAt: item.remindAt }
+            return { ...item, id: item.id, text, dateFormat, chatId, remindAt: item.remindAt }
         });
 }
 
@@ -76,6 +76,27 @@ function deleteReminder(chatId, reminderId) {
 
 function clearReminders(chatId) {
     return deleteCollection(`users/${chatId}/reminders`, 50);
+}
+
+
+async function getAllChatIdsSubscribedToAlerts() {
+    const resp = await database.collection('users').where('isSubscribedToAlerts', '==', true).get();
+    return resp.docs.map(item => item.id);
+}
+
+function updateAlertsSubscriber(chatId, isSubscribedToAlerts) {
+    return database.collection('users').doc(chatId).set({ isSubscribedToAlerts }, { merge: true })
+}
+
+async function removeAllDailyAlerts(chatId) {
+    const resp = await database.collection('users').doc(chatId).collection('reminders').where('isDailyAlert', '==', true).get();
+    const dailyAlertsIds = resp.docs.map(item => item.id);
+
+    const promisesArr = [];
+    dailyAlertsIds.forEach(dailyAlertsId => {
+        promisesArr.push(deleteReminder(chatId, dailyAlertsId));
+    });
+    await Promise.all(promisesArr);
 }
 
 async function deleteCollection(collectionPath, batchSize) {
@@ -116,5 +137,9 @@ module.exports = {
     deleteReminder,
     getActiveReminders,
     getActiveRemindersForChatIds,
-    clearReminders
+    clearReminders,
+
+    getAllChatIdsSubscribedToAlerts,
+    updateAlertsSubscriber,
+    removeAllDailyAlerts,
 }
