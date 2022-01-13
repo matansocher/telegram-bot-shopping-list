@@ -1,6 +1,6 @@
 const config = require('../../config');
 const TelegramBot = require('node-telegram-bot-api');
-const bot = new TelegramBot(config.shoppingListBotApiToken, {polling: true});
+const bot = new TelegramBot(process.env.SHOPPING_LIST_BOT_API_TOKEN, {polling: true});
 const shoppingListBotHandlers = require('./shopping-list-bot.handler');
 const telegramService = require('../telegram/telegram.service');
 const BOT_NAME = config.SHOPPING_LIST_BOT_NAME;

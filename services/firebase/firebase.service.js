@@ -65,8 +65,8 @@ function markReminderItemAsNotified(chatId, reminderId) {
     return database.collection('users').doc(chatId).collection('reminders').doc(reminderId).set({ hasNotified: true }, { merge: true });
 }
 
-function snoozeReminderItem(chatId, reminderId, millisecondsToAdd) {
-    const newRemindAt = new Date().getTime() + millisecondsToAdd;
+function snoozeReminderItem(chatId, reminderId, msToAdd) {
+    const newRemindAt = new Date().getTime() + msToAdd;
     return database.collection('users').doc(chatId).collection('reminders').doc(reminderId).set({ remindAt: newRemindAt, hasNotified: false }, { merge: true });
 }
 

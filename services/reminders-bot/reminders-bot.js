@@ -7,7 +7,7 @@
 
 const config = require('../../config');
 const TelegramBot = require('node-telegram-bot-api');
-const bot = new TelegramBot(config.remindersBotApiToken, {polling: true});
+const bot = new TelegramBot(process.env.REMINDERS_BOT_API_TOKEN, {polling: true});
 const remindersBotHandlers = require('./reminders-bot.handler');
 const telegramService = require('../telegram/telegram.service');
 const BOT_NAME = config.REMINDERS_BOT_NAME;

@@ -54,7 +54,7 @@ async function callbackQueryHandler(bot, { text, chatId, action, date }) {
         }
     } else if (leftSide === 'stopDailyAlerts') {
         await firebaseService.removeAllDailyAlerts(chatId.toString());
-        return bot.sendMessage(chatId, `OK, daily alerts set for today`);
+        return bot.sendMessage(chatId, `OK, daily alerts will stop for today`);
     } else {
         const completeOrSnoozeText = leftSide;
         const reminderId = rightSide;
@@ -65,12 +65,12 @@ async function callbackQueryHandler(bot, { text, chatId, action, date }) {
 
         if (completeOrSnoozeText === 'complete') {
             await firebaseService.deleteReminder(chatId.toString(), reminderId);
-            return bot.sendMessage(chatId, `Great job completing ${text}!!`);
+            return bot.sendMessage(chatId, `OK 😁`);
         }
 
-        const { amount: snoozeMillisecondsAmount, text: snoozeMillisecondsText } = telegramService.getMillisecondsToAddByCallbackActions(completeOrSnoozeText);
-        await firebaseService.snoozeReminderItem(chatId.toString(), reminderId, snoozeMillisecondsAmount);
-        return bot.sendMessage(chatId, `OK, I will remind you about - ${text} - ${snoozeMillisecondsText}`);
+        const { amount: snoozeMsAmount, text: snoozeMsText } = telegramService.getMsToAddByCallbackActions(completeOrSnoozeText);
+        await firebaseService.snoozeReminderItem(chatId.toString(), reminderId, snoozeMsAmount);
+        return bot.sendMessage(chatId, `OK, I will remind you about - ${text} - ${snoozeMsText}`);
     }
 }
 

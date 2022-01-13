@@ -1,5 +1,6 @@
 const { get } = require('lodash');
 const moment = require('moment');
+const config = require('../../config');
 
 async function messageMainHandler(botName, bot, handlerFunction, { message, actionText = '', callbackQueryData = '' }) {
     const defaultValuesFromMessage = getDefaultValuesFromMessage(message, actionText, callbackQueryData);
@@ -72,8 +73,8 @@ function parseTimeToRemindText(remindAtSymbol) {
 
 function getRemindAt(date, remindAtAmount, remindAtUnits) {
     try {
-        let numOfMillisecondsToAdd = remindAtAmount * getTimeToAddByUnits(remindAtUnits) * 1000;
-        return date + numOfMillisecondsToAdd;
+        let numOfMsToAdd = remindAtAmount * getTimeToAddByUnits(remindAtUnits) * config.MS_IN_SECOND;
+        return date + numOfMsToAdd;
     } catch (err) {
         throw { message: 'could not get remind at time' }
     }
@@ -109,24 +110,28 @@ function getReminderTextInList(reminder) {
     return { text, dateFormat };
 }
 
-function getMillisecondsToAddByCallbackActions(callbackActions) {
+function getMsToAddByCallbackActions(callbackActions) {
     switch (callbackActions) {
-        case '1m': return { amount: 1000 * 60, text: 'in a minute' };
-        case '1h': return { amount: 1000 * 60 * 60, text: 'in an hour' };
-        case '1d': return { amount: 1000 * 60 * 60 * 24, text: 'tomorrow' };
+        case '1m': return { amount: config.MS_IN_MINUTE, text: 'in a minute' };
+        case '1h': return { amount: config.MS_IN_HOUR, text: 'in an hour' };
+        case '1d': return { amount: config.MS_IN_DAY, text: 'tomorrow' };
     }
 }
 
 function getNextTimeToSuggestDailyAlerts() {
     const remindAtHourOfDay = 10;
     const nowObj = new Date();
+    const currentDayOnWeek = nowObj.getDay();
     const currentHours = nowObj.getHours();
     const currentMinutes = nowObj.getMinutes();
     const currentSeconds = nowObj.getSeconds();
 
+    let daysToAdd = currentDayOnWeek === 4 ? 2 : (currentDayOnWeek === 5 ? 1 : 0);
+    daysToAdd = currentHours > remindAtHourOfDay ? daysToAdd : daysToAdd + 1;
     const hoursToAdd = currentHours < remindAtHourOfDay ? (remindAtHourOfDay - currentHours - 1) : (24 - currentHours + remindAtHourOfDay - 1);
     const minutesToAdd = currentMinutes === 0 ? 60 : (60 - currentMinutes);
-    return nowObj.getTime() + (1000 * 60 * 60 * hoursToAdd) + (1000 * 60 * minutesToAdd) - (1000 * currentSeconds);
+
+    return nowObj.getTime() + (config.MS_IN_DAY * daysToAdd) + (config.MS_IN_HOUR * hoursToAdd) + (config.MS_IN_MINUTE * minutesToAdd) - (config.MS_IN_SECOND * currentSeconds);
 }
 
 function getDailyAlertsTimestamps() {
@@ -136,7 +141,7 @@ function getDailyAlertsTimestamps() {
 
     let currentTimestamp = nowObj.getTime();
     for (;;) {
-        currentTimestamp = currentTimestamp + (1000 * 60 * 60 * 1.5);
+        currentTimestamp = currentTimestamp + (config.MS_IN_HOUR * 1.5);
         dailyAlertsTimestamps.push(currentTimestamp);
         if (dailyAlertsTimestamps.length > limit - 1) {
             break;
@@ -153,7 +158,7 @@ module.exports = {
     getRemindAt,
     getAddReminderSuccessMessageText,
     getReminderTextInList,
-    getMillisecondsToAddByCallbackActions,
+    getMsToAddByCallbackActions,
     getNextTimeToSuggestDailyAlerts,
     getDailyAlertsTimestamps
 };
